@@ -1,4 +1,11 @@
-# In[]:
+'''
+# -*- coding: utf-8 -*-
+
+Created on Apr 9, 2019
+
+@author: Grejell
+
+'''
 # Import required libraries
 import os
 import pickle
@@ -86,7 +93,7 @@ layout = dict(
 )
 
 
-# In[]:
+
 # Create app layout
 app.layout = html.Div(
     [
@@ -308,7 +315,7 @@ app.layout = html.Div(
 )
 
 
-# In[]:
+
 # Helper functions
 
 def filter_dataframe(df, well_statuses, well_types, year_slider):
@@ -380,7 +387,7 @@ def fetch_aggregate(selected, year_slider):
 
 
 
-# In[]:
+
 # Main
 if __name__ == '__main__':
     app.server.run(debug=True, threaded=True)
