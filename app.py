@@ -1,32 +1,31 @@
-'''
-# -*- coding: utf-8 -*-
-
-Created on Apr 9, 2019
-
-@author: Grejell
-
-'''
+# In[]:
 # Import required libraries
 import os
 import pickle
 import copy
 import datetime as dt
+from typing import Any, Union
 
 import pandas as pd
 import numpy as np
 from flask import Flask
 from flask_cors import CORS
 import dash
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
 import plotly.plotly as py
+from textwrap import dedent as d
+
 
 # Multi-dropdown options
-from controls import COUNTIES, WELL_STATUSES, WELL_TYPES, WELL_COLORS
+from controls import Countries
 
 # change the working directory path to where this file is located #
+from pandas import DataFrame, Series
+from pandas.core.generic import NDFrame
+
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname)
@@ -52,8 +51,8 @@ fact = pd.read_csv(r'./data/fact.csv', encoding='latin-1')
 attendance = pd.read_csv(r'./data/attendance.csv', encoding='latin-1')
 
 ## TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
-daily_attend_data = pd.DataFrame(fact.groupby('first_visit')['count_2019'].sum()).reset_index()
-reg_type_data = pd.DataFrame(fact.groupby('Reg_Type')['count_2019'].sum()).reset_index()
+#daily_attend_data = pd.DataFrame(fact.groupby('first_visit')['count_2019'].sum()).reset_index()
+#reg_type_data = pd.DataFrame(fact.groupby('Reg_Type')['count_2019'].sum()).reset_index()
 topcountries_data = pd.DataFrame(fact.groupby('Country')['count_2019'].sum()).reset_index().sort_values('count_2019', ascending=False)[1:11].sort_values('count_2019', ascending=True)
 
 group_data = pd.DataFrame(fact.groupby('Group')['count_2019'].sum()).reset_index()
@@ -61,62 +60,91 @@ revisit_data = pd.DataFrame(attendance.groupby('attendance')['count_2019'].sum()
 countries_data = pd.DataFrame(fact.groupby('Country')['count_2019'].sum()).reset_index()
 #################################################################
 
-# Create global chart template
-mapbox_access_token = 'pk.eyJ1IjoiamFja2x1byIsImEiOiJjajNlcnh3MzEwMHZtMzNueGw3NWw5ZXF5In0.fk8k06T96Ml9CLGgKmk81w'  # noqa: E501
-
-
-layout = dict(
-    autosize=True,
-    height=500,
-    font=dict(color='#CCCCCC'),
-    titlefont=dict(color='#CCCCCC', size='14'),
-    margin=dict(
-        l=35,
-        r=35,
-        b=35,
-        t=45
-    ),
-    hovermode="closest",
-    plot_bgcolor="#191A1A",
-    paper_bgcolor="#020202",
-    legend=dict(font=dict(size=10), orientation='h'),
-    title='Satellite Overview',
-    mapbox=dict(
-        accesstoken=mapbox_access_token,
-        style="dark",
-        center=dict(
-            lon=-78.05,
-            lat=42.54
-        ),
-        zoom=7,
-    )
-)
-
-
 
 # Create app layout
 app.layout = html.Div(
     [
         ## add banner - this includes the logo and title
-        html.Img(
-            src="https://raw.githubusercontent.com/GrejSegura/jelly-viz/master/www/banner.PNG",
-            className='one columns',
-            style={
-                'height': '233',
-                'width': '1585',
-                'float': 'center',
-                'position': 'relative',
-            },
+        html.Div(
+            [
+                html.Img(
+                    src="https://raw.githubusercontent.com/GrejSegura/jelly-viz/master/www/banner.PNG",
+                    #className='one columns',
+                    style={
+                        'height': '228',
+                        'width': '1558',
+                        'float': 'center',
+                        'position': 'center',
+                    }
+                )
+            ],
+            className='ten columns',
+            style={'margin-bottom':50}
         ),
-
         ## add the filters here -- TODO TODO TODO TODO
-        html.Div([
-
+        html.Div(
+            [
+                html.Div(
+                    [
+                    html.P('Select Country'),
+                    dcc.Dropdown(
+                        id='countries_dropdown',
+                        options=[{'label': i, 'value': i} for i in sorted(fact['Country'].unique())],
+                        multi=True
+                        ),
+                    ],
+                    style={'margin-bottom':20,'margin-right':50,'width': '20%', 'display': 'inline-block'},
+                ),
+                html.Div(
+                    [
+                    html.P('Select Region'),
+                        dcc.Dropdown(
+                            id='region_dropdown',
+                            options=[{'label': i, 'value': i} for i in sorted(fact['Region'].unique())],
+                            multi=True
+                        ),
+                    ],
+                    style={'margin-right':50,'width': '20%', 'display': 'inline-block'},
+                ),
+                html.Div(
+                    [
+                    html.P('Select Attendance'),
+                        dcc.Dropdown(
+                            id='attendance_dropdown',
+                            options=[{'label': i, 'value': i} for i in sorted(fact['first_visit'].unique())],
+                            multi=True
+                            # value='United_Arab_Emirates'
+                        ),
+                    ],
+                    style={'margin-right':120,'width': '20%', 'display': 'inline-block'},
+                ),
+                # html.Div(
+                #     [
+                #     html.P('Select Group'),
+                #     dcc.RadioItems(
+                #         id='group_dropdown',
+                #         options=[{'label': i, 'value': i} for i in sorted(fact['Group'].unique())],
+                #         )
+                #     ],
+                #     style={'margin-right':50,'width': '10%', 'display': 'inline-block'},
+                # ),
+                # html.Div(
+                #     [
+                #     html.P('Select Registration'),
+                #     dcc.RadioItems(
+                #         id='reg_type_dropdown',
+                #         options=[{'label': i, 'value': i} for i in sorted(fact['Reg_Type'].unique())],
+                #         )
+                #     ],
+                #     style={'width': '10%', 'display': 'inline-block'},
+                # )
 
         ##  this is where the filters will be placed!!!
 
 
-        ]),
+            ],
+            style={'backgroundColor': '#F5F5F5'},
+        ),
 
         ## first row of the charts
         html.Div(
@@ -125,58 +153,23 @@ app.layout = html.Div(
                 html.Div(
                     [
                         dcc.Graph(
-                            figure=go.Figure(
-                                data=[
-                                    go.Bar(
-                                        x=daily_attend_data['first_visit'],
-                                        y=daily_attend_data['count_2019'],
-                                        name='Day Attended',
-                                        marker=go.bar.Marker(
-                                            color='#620A20'
-                                        )
-                                    )
-                                ],
-                                layout=go.Layout(
-                                    title='Daily Attendance',
-                                    margin=go.layout.Margin(l=0, r=100, t=40, b=40)
-                                )
-                            )
-                            ,id='daily_attendance'
+                        id='daily_attendance'
                         )
                     ],
                     className='four columns',
-                    style={'margin-top': '50'}
+                    style={'margin-top': '50', 'backgroundColor': '#ECFCF8'}
                 ),
 
                 ## Registration Type
                 html.Div(
                     [
                         dcc.Graph(
-                            figure=go.Figure(
-                                data=[
-                                    go.Pie(
-                                        hole=0.55,
-                                        sort=False,
-                                        direction='clockwise',
-                                        values=reg_type_data['count_2019'],
-                                        labels=reg_type_data['Reg_Type'],
-                                        textinfo='label',
-                                        textposition='outside',
-                                        marker={'colors': ['#B41D2D', '#620A20'],
-                                                'line': {'color': 'white', 'width': 1}}
-                                    )
-                                ],
-                                layout=go.Layout(
-                                    title='Registration Type',
-                                    margin=go.layout.Margin(l=0, r=100, t=40, b=40)
-                                )
-                            )
-                            ,id='registration_type'
+                        id='registration_type'
                         )
                     ],
                     className='four columns',
-                    style={'margin-top': '50'}
-                ## Top 10 International Countries
+                    style={'margin-top': '50', 'backgroundColor': '#F4F4F4'},
+                    ## Top 10 International Countries
                 ),
                 html.Div(
                     [
@@ -187,21 +180,23 @@ app.layout = html.Div(
                                         y=topcountries_data['Country'],
                                         x=topcountries_data['count_2019'],
                                         name='Top 10 International Countries',
-                                        marker=go.bar.Marker(
+                                        marker=dict(
                                             color='#620A20'),
                                         orientation='h'
                                     )
                                 ],
                                 layout=go.Layout(
                                     title='Top 10 International Countries',
-                                    margin=go.layout.Margin(l=150, r=0, t=40, b=40)
+                                    margin=dict(l=150, r=0, t=40, b=40),
+                                    paper_bgcolor = '#F4F4F4',
+                                    plot_bgcolor = '#F4F4F4',
                                 )
                             )
-                            ,id='top_international_countries'
+                        ,id='top_international_countries'
                         )
                     ],
                     className='four columns',
-                    style={'margin-top': '50'}
+                    style={'margin-top': '50', 'backgroundColor': '#F4F4F4'}
                 ),
             ],
             className='row'
@@ -220,20 +215,22 @@ app.layout = html.Div(
                                         y=revisit_data['attendance'][revisit_data['attendance']!='No Show'],
                                         x=revisit_data['count_2019'][revisit_data['attendance']!='No Show'],
                                         name='Attendees with Revisit (Daily Influx)',
-                                        marker=go.bar.Marker(
+                                        marker=dict(
                                             color='#620A20'),
                                         orientation='h'
                                     )
                                 ],
                                 layout=go.Layout(
                                     title='Attendees with Revisit (Daily Influx)',
-                                    margin=go.layout.Margin(l=40, r=100, t=40, b=40)
+                                    margin=dict(l=40, r=100, t=40, b=40),
+                                    paper_bgcolor = '#F4F4F4',
+                                    plot_bgcolor = '#F4F4F4',
                                 )
                             )
                         ,id='attendees_revisit')
                     ],
                     className='four columns',
-                    style={'margin-top': '50'}
+                    style={'margin-top': '10', 'backgroundColor': '#F4F4F4'}
                 ),
                 ## UAE vs International
                 html.Div(
@@ -255,13 +252,15 @@ app.layout = html.Div(
                                 ],
                                 layout=go.Layout(
                                     title='UAE vs International',
-                                    margin=go.layout.Margin(l=0, r=100, t=40, b=40)
+                                    margin=dict(l=0, r=100, t=40, b=40),
+                                    paper_bgcolor = '#F4F4F4',
+                                    plot_bgcolor = '#F4F4F4',
                                 )
                             )
                         ,id='uae_vs_intl')
                     ],
                     className='four columns',
-                    style={'margin-top': '50'}
+                    style={'margin-top': '10', 'backgroundColor': '#F4F4F4'}
                 ## Participating Countries
                 ),
                 html.Div(
@@ -275,119 +274,125 @@ app.layout = html.Div(
                                     text = countries_data['Country'],
                                     autocolorscale = False,
                                     reversescale = False,
-                                    marker = go.choropleth.Marker(
-                                        line = go.choropleth.marker.Line(
+                                    marker = dict(
+                                        line = dict(
                                             color = 'rgb(180,180,180)',
-                                            width = 0.5
+                                            width = .5
                                         )),
+
+                                    showscale=False
                                 )],
                                 layout = go.Layout(
-                                    title = go.layout.Title(
+                                    title = dict(
                                         text = 'Participating Countries'
                                     ),
-                                    geo = go.layout.Geo(
+                                    geo = dict(
                                         showframe = False,
-                                        showcoastlines = False,
-                                        projection = go.layout.geo.Projection(
-                                            type = 'equirectangular'
+                                        showcoastlines = True,
+                                        projection = dict(
+                                            type = 'equirectangular',
                                         )
                                     ),
-                                    annotations = [go.layout.Annotation(
-                                        x = 0.55,
-                                        y = 0.1,
+                                    annotations = [dict(
+                                        x = 1,
+                                        y = 0.5,
                                         xref = 'paper',
                                         yref = 'paper',
                                         showarrow = False
                                     ),],
-                                    margin=go.layout.Margin(l=0, r=100, t=40, b=40)
+                                    #margin=dict(l=0, r=100, t=40, b=40),
+                                    paper_bgcolor = '#F4F4F4',
+                                    plot_bgcolor = '#F4F4F4',
+                                    showlegend=False,
+
                                 )
                             )
                         ,id='participating_countries')
                     ],
                     className='four columns',
-                    style={'margin-top': '50'}
+                    style={'margin-top': '10', 'backgroundColor': '#F4F4F4'}
                 ),
             ],
             className='row'
-        ),
+        )
     ],
-    className='ten columns offset-by-one'
+    className='ten columns offset-by-one',
 )
 
 
+# callback functions for the FILTERS
+# Countries Dropdown
+@app.callback(Output('daily_attendance', 'figure'),
+            [Input('countries_dropdown','value')])
+def update_fact_data_country(country_selected):
+    if not country_selected:
+        daily_attend_data = fact
+    else:
+        daily_attend_data = pd.DataFrame()
+        for country in country_selected:
+            per_country_data = pd.DataFrame(fact[fact['Country']==country]) #.groupby('first_visit')['count_2019'].sum()).reset_index()
+            daily_attend_data = daily_attend_data.append(per_country_data, ignore_index=True)
 
-# Helper functions
+    daily_attend_data_agg = daily_attend_data.groupby('first_visit')['count_2019'].sum().reset_index()
 
-def filter_dataframe(df, well_statuses, well_types, year_slider):
-    dff = df[df['Well_Status'].isin(well_statuses)
-             & df['Well_Type'].isin(well_types)
-             & (df['Date_Well_Completed'] > dt.datetime(year_slider[0], 1, 1))
-             & (df['Date_Well_Completed'] < dt.datetime(year_slider[1], 1, 1))]
-    return dff
+    figure = go.Figure(
+        data=[
+            go.Bar(
+                x=daily_attend_data_agg['first_visit'],
+                y=daily_attend_data_agg['count_2019'],
+                text=daily_attend_data_agg['count_2019'],
+                textposition='auto',
+                hoverinfo='text',
+                marker=dict(
+                    color='#620A20'
+                )
+            )
+        ],
+        layout=go.Layout(
+            title='Daily Attendance',
+            margin=dict(l=0, r=100, t=40, b=40),
+            paper_bgcolor = '#F4F4F4',
+            plot_bgcolor = '#F4F4F4',
+        )
+    )
+    return figure
 
+@app.callback(Output('registration_type', 'figure'),
+              [Input('countries_dropdown', 'value')])
+def update_fact_data_reg_type(country_selected):
+    if not country_selected:
+        reg_type_data = fact
+    else:
+        reg_type_data = pd.DataFrame()
+        for country in country_selected:
+            per_country_data = pd.DataFrame(fact[fact['Country']==country]) #.groupby('first_visit')['count_2019'].sum()).reset_index()
+            reg_type_data = reg_type_data.append(per_country_data, ignore_index=True)
 
-## Helper functions to create new data
-def fetch_individual(api):
-    try:
-        points[api]
-    except:
-        return None, None, None, None
+    reg_type_data_agg = reg_type_data.groupby('Reg_Type')['count_2019'].sum().reset_index()
 
-    index = list(range(min(points[api].keys()), max(points[api].keys()) + 1))
-    gas = []
-    oil = []
-    water = []
+    figure = go.Figure(
+        data=[
+            go.Pie(
+                hole=0.55,
+                sort=False,
+                direction='clockwise',
+                values=reg_type_data_agg['count_2019'],
+                labels=reg_type_data_agg['Reg_Type'],
+                textinfo='label',
+                textposition='outside',
+                marker={'colors': ['#B41D2D', '#620A20'],
+                        'line': {'color': 'white', 'width': 1}}
+            )
+        ],
+        layout=go.Layout(
+            title='Daily Attendance',
+            margin=dict(l=0, r=100, t=40, b=40),
+            paper_bgcolor = '#F4F4F4',
+            plot_bgcolor = '#F4F4F4',
+        )
+    )
+    return figure
 
-    for year in index:
-        try:
-            gas.append(points[api][year]['Gas Produced, MCF'])
-        except:
-            gas.append(0)
-        try:
-            oil.append(points[api][year]['Oil Produced, bbl'])
-        except:
-            oil.append(0)
-        try:
-            water.append(points[api][year]['Water Produced, bbl'])
-        except:
-            water.append(0)
-
-    return index, gas, oil, water
-
-
-def fetch_aggregate(selected, year_slider):
-
-    index = list(range(max(year_slider[0], 1985), 2016))
-    gas = []
-    oil = []
-    water = []
-
-    for year in index:
-        count_gas = 0
-        count_oil = 0
-        count_water = 0
-        for api in selected:
-            try:
-                count_gas += points[api][year]['Gas Produced, MCF']
-            except:
-                pass
-            try:
-                count_oil += points[api][year]['Oil Produced, bbl']
-            except:
-                pass
-            try:
-                count_water += points[api][year]['Water Produced, bbl']
-            except:
-                pass
-        gas.append(count_gas)
-        oil.append(count_oil)
-        water.append(count_water)
-
-    return index, gas, oil, water
-
-
-
-
-# Main
 if __name__ == '__main__':
     app.server.run(debug=True, threaded=True)
+
