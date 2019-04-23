@@ -1,4 +1,4 @@
-# Deploying your Dash app online
+# Jelly-Viz -- an all purpose visualization tool
 
 This project aims to create a template for visualizing an attendance data from an anonymous event show.
 The main goal is to automate the live monitoring and update of the attendees in a fast and efficient manner.
