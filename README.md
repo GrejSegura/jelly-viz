@@ -1,3 +1,4 @@
+![alt text](https://github.com/GrejSegura/jelly-viz/blob/master/www/banner.PNG)
 # Jelly-Viz -- an all purpose visualization tool
 
 This project aims to create a template for visualizing an attendance data from an anonymous event show.
