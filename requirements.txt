@@ -39,7 +39,7 @@ rsa==4.0
 six==1.12.0
 traitlets==4.3.2
 uritemplate==3.0.0
-urllib3==1.24.1
+urllib3==1.26.5
 Werkzeug==0.15.2
 wincertstore==0.2
 flask_cors==3.0.7
